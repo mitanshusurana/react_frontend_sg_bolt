@@ -1,0 +1,149 @@
+import React from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { ArrowLeft, Printer, Download, Share2 } from 'lucide-react';
+import useGemstones from '../hooks/useGemstones';
+import toast from 'react-hot-toast';
+
+const QrCodePage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const { getGemstone } = useGemstones();
+  
+  if (!id) {
+    return <div>Invalid gemstone ID</div>;
+  }
+  
+  const gemstone = getGemstone(id);
+  
+  if (!gemstone) {
+    return (
+      <div className="container-page flex flex-col items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-neutral-900 mb-2">Gemstone Not Found</h1>
+          <p className="text-neutral-500 mb-6">
+            The gemstone you're looking for doesn't exist or has been removed.
+          </p>
+          <Link to="/inventory" className="btn-primary">
+            Back to Inventory
+          </Link>
+        </div>
+      </div>
+    );
+  }
+  
+  const handlePrint = () => {
+    window.print();
+  };
+  
+  const handleDownload = async () => {
+    try {
+      const response = await fetch(gemstone.qrCode);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `${gemstone.name.replace(/\s+/g, '-').toLowerCase()}-qr-code.png`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      toast.error('Failed to download QR code');
+    }
+  };
+  
+  const handleCopyLink = () => {
+    const url = window.location.origin + `/gemstone/${gemstone.id}`;
+    navigator.clipboard.writeText(url);
+    toast.success('Link copied to clipboard');
+  };
+
+  return (
+    <div className="container-page">
+      {/* Back button */}
+      <Link 
+        to={`/gemstone/${id}`} 
+        className="inline-flex items-center text-neutral-600 hover:text-neutral-900 mb-6"
+      >
+        <ArrowLeft className="h-4 w-4 mr-1" />
+        Back to Gemstone
+      </Link>
+      
+      <div className="max-w-2xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-neutral-900 mb-2">{gemstone.name} - QR Code</h1>
+          <p className="text-neutral-500">
+            Scan this QR code to quickly access the gemstone details
+          </p>
+        </div>
+        
+        <div className="card p-8 flex flex-col items-center">
+          {/* QR Code */}
+          <div className="p-4 bg-white rounded-lg shadow-sm border border-neutral-200 mb-6">
+            <img 
+              src={gemstone.qrCode} 
+              alt={`QR Code for ${gemstone.name}`}
+              className="w-64 h-64"
+            />
+          </div>
+          
+          {/* Gemstone summary */}
+          <div className="text-center mb-8">
+            <h2 className="text-xl font-semibold text-neutral-900 mb-2">{gemstone.name}</h2>
+            <div className="text-neutral-600">
+              <p>{gemstone.type} • {gemstone.weight} ct</p>
+              <p className="text-sm text-neutral-500 mt-1">{gemstone.id}</p>
+            </div>
+          </div>
+          
+          {/* Actions */}
+          <div className="flex flex-wrap justify-center gap-4">
+            <button
+              onClick={handlePrint}
+              className="btn-outline flex items-center"
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              Print
+            </button>
+            
+            <button
+              onClick={handleDownload}
+              className="btn-outline flex items-center"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download
+            </button>
+            
+            <button
+              onClick={handleCopyLink}
+              className="btn-outline flex items-center"
+            >
+              <Share2 className="h-4 w-4 mr-2" />
+              Copy Link
+            </button>
+          </div>
+        </div>
+        
+        <div className="mt-8 bg-primary-50 border border-primary-100 rounded-lg p-4">
+          <h3 className="text-sm font-medium text-primary-800 mb-2">How to use this QR code:</h3>
+          <ul className="text-sm text-primary-700 space-y-2">
+            <li className="flex items-start">
+              <span className="inline-block w-4 h-4 rounded-full bg-primary-200 text-primary-800 text-xs flex items-center justify-center mr-2 mt-0.5">1</span>
+              Print this QR code and attach it to the gemstone container or documentation
+            </li>
+            <li className="flex items-start">
+              <span className="inline-block w-4 h-4 rounded-full bg-primary-200 text-primary-800 text-xs flex items-center justify-center mr-2 mt-0.5">2</span>
+              Scan the code with any QR code scanner or smartphone camera
+            </li>
+            <li className="flex items-start">
+              <span className="inline-block w-4 h-4 rounded-full bg-primary-200 text-primary-800 text-xs flex items-center justify-center mr-2 mt-0.5">3</span>
+              Access detailed information about this gemstone instantly
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default QrCodePage;
