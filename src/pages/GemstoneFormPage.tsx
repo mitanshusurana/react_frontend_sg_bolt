@@ -5,7 +5,9 @@ import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import toast from 'react-hot-toast';
 import useGemstones from '../hooks/useGemstones';
+import { gemstoneService } from '../services/gemstoneService';
 import { GemstoneFormValues } from '../types';
+import { uploadService } from '../services/uploadService';
 
 const GemstoneFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,8 +19,24 @@ const GemstoneFormPage: React.FC = () => {
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string>('');
   
   const isEditMode = Boolean(id);
-  const gemstone = id ? getGemstone(id) : null;
-  
+  const [gemstone, setGemstone] = useState<GemstoneFormValues | null>(null);
+
+  useEffect(() => {
+    if (id) {
+      getGemstone(id).then((data: GemstoneFormValues) => {
+        setGemstone(data);
+        // Set previews for images and video if editing
+        if (data.images && data.images.length > 0) {
+          setImagePreviewUrls(data.images.filter((img): img is string => typeof img === 'string'));
+        }
+        if (data.video && typeof data.video === 'string') {
+          setVideoPreviewUrl(data.video);
+        }
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
   // Initial form values
   const initialValues: GemstoneFormValues = {
     name: gemstone?.name || '',
@@ -44,6 +62,9 @@ const GemstoneFormPage: React.FC = () => {
     tags: gemstone?.tags || [],
     images: gemstone?.images || [],
     video: gemstone?.video || '',
+    id: '',
+    createdBy: '',
+    lastEditedBy: ''
   };
   
   // Validation schema
@@ -73,19 +94,55 @@ const GemstoneFormPage: React.FC = () => {
   // Handle form submission
   const handleSubmit = async (values: GemstoneFormValues) => {
     try {
-      // In a real app, we would:
-      // 1. Upload images/video to Cloudflare R2
-      // 2. Get the URLs back
-      // 3. Include those URLs in the gemstone data
-      
+      // 1. Handle images
+      let imageUrls: string[] = [];
+      // a. Upload new images if any
+      if (selectedImages.length > 0) {
+        const uploadedImages = await uploadService.uploadMultipleFiles(selectedImages);
+        // uploadedImages is an array of URLs
+        const keptUrls = imagePreviewUrls.filter(url =>
+          gemstone?.images?.includes(url)
+        );
+        imageUrls = [...keptUrls, ...uploadedImages];
+      } else if (isEditMode && gemstone && imagePreviewUrls.length > 0) {
+        // Only old images kept
+        imageUrls = imagePreviewUrls;
+      } else {
+        // No images selected or kept
+        imageUrls = [];
+      }
+
+      // 2. Handle video
+      let videoUrl: string = '';
+      if (selectedVideo) {
+        const uploadedVideo = await uploadService.uploadMultipleFiles([selectedVideo]);
+        videoUrl = uploadedVideo[0] || '';
+      } else if (isEditMode && gemstone && videoPreviewUrl) {
+        // Only old video kept
+        videoUrl = videoPreviewUrl;
+      } else {
+        videoUrl = '';
+      }
+
+      // 3. Prepare data for backend
+      const gemstoneData = {
+        ...values,
+        images: imageUrls,
+        video: videoUrl,
+        qrCode: gemstone?.qrCode || '',
+        lastEditedBy: gemstone?.lastEditedBy || '',
+        auditTrail: gemstone?.auditTrail || [],
+      };
+
+      // 4. Submit to backend
       if (isEditMode && gemstone) {
-        const updated = updateGemstone(gemstone.id, values);
+        const updated = await updateGemstone(gemstone.id as string, gemstoneData);
         if (updated) {
           toast.success('Gemstone updated successfully');
           navigate(`/gemstone/${gemstone.id}`);
         }
       } else {
-        const newGemstone = addGemstone(values);
+        const newGemstone = await addGemstone(gemstoneData);
         toast.success('Gemstone added successfully');
         navigate(`/gemstone/${newGemstone.id}`);
       }
