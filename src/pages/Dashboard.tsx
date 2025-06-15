@@ -1,14 +1,15 @@
-import React from 'react';
+
 import { Link } from 'react-router-dom';
 import { Diamond, Package, ClipboardList, BarChart3, Search, Plus } from 'lucide-react';
 import useGemstones from '../hooks/useGemstones';
 import GemstoneCard from '../components/Gemstone/GemstoneCard';
+import { Gemstone } from '../types';
 
 const Dashboard = () => {
-  const { gemstones, loading } = useGemstones();
+  const { gemstones = { content: [] }, loading } = useGemstones();
   
-  // Show only the 4 most recent gemstones
-  const recentGemstones = gemstones.slice(0, 4);
+  // Show only the 4 most recent gemstones (or fewer if less exist)
+  const recentGemstones = (gemstones.content ?? []).slice(0, 4);
 
   return (
     <div className="container-page">
@@ -38,7 +39,7 @@ const Dashboard = () => {
           </div>
           <div>
             <p className="text-sm font-medium text-neutral-500">Total Gemstones</p>
-            <p className="text-2xl font-semibold text-neutral-900">{loading ? '...' : gemstones.length}</p>
+            <p className="text-2xl font-semibold text-neutral-900">{loading ? '...' : (gemstones.content ?? []).length}</p>
           </div>
         </div>
         
@@ -137,7 +138,7 @@ const Dashboard = () => {
               </div>
             ))
           ) : recentGemstones.length > 0 ? (
-            recentGemstones.map((gemstone) => (
+            recentGemstones.map((gemstone: Gemstone) => (
               <GemstoneCard key={gemstone.id} gemstone={gemstone} />
             ))
           ) : (

@@ -8,8 +8,7 @@ import {
   QrCode, 
   Calendar, 
   Clipboard, 
-  Share, 
-  Download,
+
   Info,
   ArrowUpRight,
   Clock
@@ -30,8 +29,43 @@ const GemstoneDetailPage: React.FC = () => {
     return <div>Invalid gemstone ID</div>;
   }
   
-  const gemstone = getGemstone(id);
-  
+  const [gemstone, setGemstone] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    setLoading(true);
+    getGemstone(id)
+      .then((data: any) => {
+        if (isMounted) {
+          setGemstone(data);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setGemstone(null);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false);
+        }
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [id, getGemstone]);
+
+  if (loading) {
+    return (
+      <div className="container-page flex flex-col items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-neutral-900 mb-2">Loading...</h1>
+        </div>
+      </div>
+    );
+  }
+
   if (!gemstone) {
     return (
       <div className="container-page flex flex-col items-center justify-center">
@@ -48,8 +82,8 @@ const GemstoneDetailPage: React.FC = () => {
     );
   }
   
-  const handleDelete = () => {
-    const success = deleteGemstone(id);
+  const handleDelete = async () => {
+    const success = await deleteGemstone(id);
     
     if (success) {
       toast.success('Gemstone deleted successfully');
@@ -138,15 +172,17 @@ const GemstoneDetailPage: React.FC = () => {
               <h3 className="text-lg font-medium text-neutral-900">Tags</h3>
             </div>
             <div className="flex flex-wrap gap-2">
-              {gemstone.tags.map((tag) => (
-                <span 
-                  key={tag} 
-                  className="bg-neutral-100 text-neutral-700 px-3 py-1 rounded-full text-sm"
-                >
-                  {tag}
-                </span>
-              ))}
-              {gemstone.tags.length === 0 && (
+              {(gemstone.tags as Array<any>)
+                .filter((tag) => typeof tag === 'string' || typeof tag === 'number')
+                .map((tag: string | number) => (
+                  <span 
+                    key={tag} 
+                    className="bg-neutral-100 text-neutral-700 px-3 py-1 rounded-full text-sm"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              {(gemstone.tags.filter((tag: any) => typeof tag === 'string' || typeof tag === 'number').length === 0) && (
                 <span className="text-neutral-500 text-sm">No tags</span>
               )}
             </div>
@@ -178,7 +214,7 @@ const GemstoneDetailPage: React.FC = () => {
             
             {showAuditTrail && (
               <div className="card p-4 mt-2 max-h-96 overflow-y-auto">
-                {gemstone.auditTrail.map((event, index) => (
+                {gemstone.auditTrail.map((event: { action: string; timestamp: string; changes: { [s: string]: { before: any; after: any } }; }, index: React.Key | null | undefined) => (
                   <div 
                     key={index} 
                     className="mb-4 pb-4 border-b border-neutral-200 last:border-0 last:mb-0 last:pb-0"
@@ -203,14 +239,17 @@ const GemstoneDetailPage: React.FC = () => {
                     {event.changes && Object.keys(event.changes).length > 0 && (
                       <div className="mt-2 pl-4 text-sm">
                         <div className="text-neutral-500 mb-1">Changes:</div>
-                        {Object.entries(event.changes).map(([field, { before, after }]) => (
-                          <div key={field} className="ml-2 mb-1">
-                            <span className="font-medium text-neutral-700">{field}: </span>
-                            <span className="text-error-600 line-through">{before || 'empty'}</span>
-                            <span className="mx-1">→</span>
-                            <span className="text-success-600">{after || 'empty'}</span>
-                          </div>
-                        ))}
+                        {Object.entries(event.changes).map(([field, value]) => {
+                          const { before, after } = value as { before: any; after: any };
+                          return (
+                            <div key={field} className="ml-2 mb-1">
+                              <span className="font-medium text-neutral-700">{field}: </span>
+                              <span className="text-error-600 line-through">{before || 'empty'}</span>
+                              <span className="mx-1">→</span>
+                              <span className="text-success-600">{after || 'empty'}</span>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>

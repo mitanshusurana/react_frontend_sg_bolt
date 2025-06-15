@@ -1,19 +1,34 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Printer, Download, Share2 } from 'lucide-react';
 import useGemstones from '../hooks/useGemstones';
 import toast from 'react-hot-toast';
+import { QRCodeCanvas } from 'qrcode.react';
 
 const QrCodePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { getGemstone } = useGemstones();
-  
+  const qrRef = useRef<any>(null);
+  const [gemstone, setGemstone] = React.useState<any | null>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    getGemstone(id)
+      .then((data: any) => setGemstone(data))
+      .catch(() => setGemstone(null))
+      .finally(() => setLoading(false));
+  }, [id, getGemstone]);
+
   if (!id) {
     return <div>Invalid gemstone ID</div>;
   }
-  
-  const gemstone = getGemstone(id);
-  
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   if (!gemstone) {
     return (
       <div className="container-page flex flex-col items-center justify-center">
@@ -29,16 +44,19 @@ const QrCodePage: React.FC = () => {
       </div>
     );
   }
-  
+
+  // The URL you want to encode in the QR code
+  const qrValue = window.location.origin + `/gemstone/${gemstone.id}`;
+
   const handlePrint = () => {
     window.print();
   };
-  
-  const handleDownload = async () => {
+
+  const handleDownload = () => {
     try {
-      const response = await fetch(gemstone.qrCode);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const canvas = qrRef.current;
+      if (!canvas) throw new Error('QR code not rendered');
+      const url = canvas.toDataURL('image/png');
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
@@ -51,10 +69,9 @@ const QrCodePage: React.FC = () => {
       toast.error('Failed to download QR code');
     }
   };
-  
+
   const handleCopyLink = () => {
-    const url = window.location.origin + `/gemstone/${gemstone.id}`;
-    navigator.clipboard.writeText(url);
+    navigator.clipboard.writeText(qrValue);
     toast.success('Link copied to clipboard');
   };
 
@@ -80,10 +97,11 @@ const QrCodePage: React.FC = () => {
         <div className="card p-8 flex flex-col items-center">
           {/* QR Code */}
           <div className="p-4 bg-white rounded-lg shadow-sm border border-neutral-200 mb-6">
-            <img 
-              src={gemstone.qrCode} 
-              alt={`QR Code for ${gemstone.name}`}
-              className="w-64 h-64"
+            <QRCodeCanvas
+              value={qrValue}
+              size={256}
+              includeMargin={true}
+          
             />
           </div>
           

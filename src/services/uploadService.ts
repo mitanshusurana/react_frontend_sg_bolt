@@ -25,7 +25,7 @@ export const uploadService = {
         })
       );
 
-      return `${config.r2.endpoint}/${config.r2.bucketName}/${key}`;
+      return `${config.r2.publicUrl}/${key}`;
     } catch (error) {
       console.error('Upload error:', error);
       throw new Error('Failed to upload file');

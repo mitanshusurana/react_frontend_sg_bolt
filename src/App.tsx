@@ -9,11 +9,21 @@ import ReportsPage from './pages/ReportsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import NotFoundPage from './pages/NotFoundPage';
 import QrCodePage from './pages/QrCodePage';
+import LoginPage from './pages/LoginPage';
+import RequireAuth from './components/RequireAuth';
 
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<MainLayout />}>
+      <Route path="/login" element={<LoginPage />} />
+      <Route
+        path="/"
+        element={
+          <RequireAuth>
+            <MainLayout />
+          </RequireAuth>
+        }
+      >
         <Route index element={<Dashboard />} />
         <Route path="inventory" element={<InventoryPage />} />
         <Route path="gemstone/:id" element={<GemstoneDetailPage />} />

@@ -11,7 +11,7 @@ interface GemstoneGridProps {
 }
 
 const GemstoneGrid: React.FC<GemstoneGridProps> = ({ 
-  gemstones, 
+  gemstones = [], 
   loading = false, 
   onLoadMore,
   hasMore = false
@@ -43,7 +43,7 @@ const GemstoneGrid: React.FC<GemstoneGridProps> = ({
 
   return (
     <div className="gem-grid animate-fade-in">
-      {gemstones.map((gemstone) => (
+      {(Array.isArray(gemstones) ? gemstones : []).map((gemstone) => (
         <GemstoneCard key={gemstone.id} gemstone={gemstone} />
       ))}
       

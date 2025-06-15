@@ -1,15 +1,13 @@
 import { api } from '../config/api';
-import { Gemstone, GemstoneFormValues } from '../types';
+import { Gemstone } from '../types';
 
 export const gemstoneService = {
-  // Get all gemstones with optional filters
-   // ...existing code...
-    // Get all gemstones with optional filters
-    async getGemstones(params?: Record<string, any>) {
-      const response = await api.get('', { params });
-      return response.data;
-    },
-  // ...existing code...
+  // Get all gemstones with pagination and filters
+  async getGemstones(params?: Record<string, any>) {
+    // params can include page, size, sort, filters, etc.
+    const response = await api.get('', { params });
+    return response.data; // return the full paginated response
+  },
 
   // Get a single gemstone by ID
   async getGemstone(id: string) {
@@ -18,14 +16,14 @@ export const gemstoneService = {
   },
 
   // Create a new gemstone
-  async createGemstone(data: GemstoneFormValues) {
-    const response = await api.post('',data);
+  async createGemstone(data: Omit<Gemstone, 'id' | 'createdAt' | 'updatedAt'>) {
+    const response = await api.post('', data);
     return response.data;
   },
 
   // Update an existing gemstone
-  async updateGemstone(id: string, data: Partial<GemstoneFormValues>) {
-    const response = await api.put(`${id}`, data);
+  async updateGemstone(_id: string, data: Partial<Gemstone>) {
+    const response = await api.put(``, data);
     return response.data;
   },
 

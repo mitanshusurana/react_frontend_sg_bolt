@@ -3,6 +3,7 @@ import { Download, FileText, Filter, Printer, Search } from 'lucide-react';
 import useGemstones from '../hooks/useGemstones';
 import { FilterParams } from '../types';
 import { formatDate, formatWeight } from '../utils/formatters';
+import { gemstoneService } from '../services/gemstoneService';
 
 const ReportsPage: React.FC = () => {
   const { gemstones, setFilters } = useGemstones();
@@ -10,8 +11,13 @@ const ReportsPage: React.FC = () => {
   const [reportType, setReportType] = useState<'all' | 'summary' | 'detailed'>('all');
   const [dateRange, setDateRange] = useState<'all' | 'last30' | 'last90' | 'thisYear'>('all');
   const [category, setCategory] = useState<string>('');
-  
-  const categories = Array.from(new Set(gemstones.map(gem => gem.category)));
+  const [data, setData] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(false);
+  const [page] = React.useState(0);
+  const [size] = React.useState(12);
+  const [filters] = React.useState({}); // e.g. { type: 'Ruby' }
+
+  const categories = Array.from(new Set((gemstones.content ?? []).map((gem: { category: any; }) => gem.category)));
   
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
@@ -56,7 +62,7 @@ const ReportsPage: React.FC = () => {
   const handleGenerateCSV = () => {
     // Simple CSV generation
     const headers = ['Name', 'Category', 'Type', 'Weight', 'Color', 'Dimensions', 'Acquisition Date'];
-    const csvData = gemstones.map(gem => {
+    const csvData = (gemstones.content ?? []).map((gem: { name: any; category: any; type: any; weight: any; color: any; dimensions: { length: any; width: any; height: any; }; acquisitionDate: any; }) => {
       return [
         gem.name,
         gem.category,
@@ -83,6 +89,16 @@ const ReportsPage: React.FC = () => {
   const handlePrint = () => {
     window.print();
   };
+
+  React.useEffect(() => {
+    setLoading(true);
+    gemstoneService.getGemstones({ page: page + 1, size, ...filters })
+      .then(setData)
+      .finally(() => setLoading(false));
+  }, [page, size, filters]);
+
+  if (loading) return <div>Loading...</div>;
+  if (!data) return null;
 
   return (
     <div className="container-page">
@@ -173,8 +189,8 @@ const ReportsPage: React.FC = () => {
                 >
                   <option value="">All Categories</option>
                   {categories.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
+                    <option key={String(cat)} value={String(cat)}>
+                      {String(cat)}
                     </option>
                   ))}
                 </select>
@@ -283,7 +299,7 @@ const ReportsPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-neutral-200">
-                  {gemstones.map((gemstone) => (
+                  {(gemstones.content ?? []).map((gemstone: { id: React.Key | null | undefined; name: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; category: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; type: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; weight: number; color: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; acquisitionDate: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; }) => (
                     <tr key={gemstone.id} className="hover:bg-neutral-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">
                         {gemstone.name}
@@ -306,7 +322,7 @@ const ReportsPage: React.FC = () => {
                     </tr>
                   ))}
                   
-                  {gemstones.length === 0 && (
+                  {(gemstones.content ?? []).length === 0 && (
                     <tr>
                       <td colSpan={6} className="px-6 py-4 text-center text-sm text-neutral-500">
                         No gemstones found matching the filter criteria
@@ -324,13 +340,13 @@ const ReportsPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-neutral-50 rounded-lg p-4">
                   <div className="text-sm text-neutral-500">Total Gemstones</div>
-                  <div className="text-2xl font-semibold text-neutral-900">{gemstones.length}</div>
+                  <div className="text-2xl font-semibold text-neutral-900">{(gemstones.content ?? []).length}</div>
                 </div>
                 
                 <div className="bg-neutral-50 rounded-lg p-4">
                   <div className="text-sm text-neutral-500">Total Weight</div>
                   <div className="text-2xl font-semibold text-neutral-900">
-                    {formatWeight(gemstones.reduce((sum, gem) => sum + gem.weight, 0))}
+                    {formatWeight((gemstones.content ?? []).reduce((sum: any, gem: { weight: any; }) => sum + gem.weight, 0))}
                   </div>
                 </div>
                 
@@ -342,8 +358,8 @@ const ReportsPage: React.FC = () => {
                 <div className="bg-neutral-50 rounded-lg p-4">
                   <div className="text-sm text-neutral-500">Average Weight</div>
                   <div className="text-2xl font-semibold text-neutral-900">
-                    {gemstones.length > 0
-                      ? formatWeight(gemstones.reduce((sum, gem) => sum + gem.weight, 0) / gemstones.length)
+                    {(gemstones.content ?? []).length > 0
+                      ? formatWeight((gemstones.content ?? []).reduce((sum: any, gem: { weight: any; }) => sum + gem.weight, 0) / (gemstones.content ?? []).length)
                       : '0 ct'}
                   </div>
                 </div>

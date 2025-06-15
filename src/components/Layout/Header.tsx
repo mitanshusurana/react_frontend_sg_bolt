@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Diamond, Search, User, BarChart, Plus } from 'lucide-react';
-import { useAuth } from '../../hooks/useAuth';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, X, Diamond, User } from 'lucide-react';
+import useAuth from '../../hooks/useAuth';
 
 export const Header: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -14,6 +15,11 @@ export const Header: React.FC = () => {
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
   };
 
   return (
@@ -73,18 +79,14 @@ export const Header: React.FC = () => {
 
           {/* Desktop action buttons */}
           <div className="hidden md:flex md:items-center md:space-x-4">
-            <button className="inline-flex items-center justify-center p-2 rounded-md text-neutral-400 hover:text-neutral-500 hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
-              <Search className="h-5 w-5" />
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="inline-flex items-center justify-center px-4 py-2 rounded-md text-base font-medium text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500"
+            >
+              <User className="h-5 w-5 mr-2" />
+              Sign out
             </button>
-            <Link to="/gemstone/new" className="btn-primary flex items-center space-x-1">
-              <Plus className="h-4 w-4" />
-              <span>Add Gemstone</span>
-            </Link>
-            <div className="relative">
-              <button className="inline-flex items-center justify-center p-2 rounded-md text-neutral-400 hover:text-neutral-500 hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
-                <User className="h-5 w-5" />
-              </button>
-            </div>
           </div>
 
           {/* Mobile menu button */}
@@ -153,47 +155,14 @@ export const Header: React.FC = () => {
             >
               Analytics
             </Link>
-            <Link
-              to="/gemstone/new"
-              className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium border-transparent bg-neutral-50 text-accent-500`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Add New Gemstone
-            </Link>
           </div>
-          <div className="pt-4 pb-3 border-t border-neutral-200">
-            <div className="flex items-center px-4">
-              <div className="flex-shrink-0">
-                <div className="h-10 w-10 rounded-full bg-primary-600 flex items-center justify-center text-white">
-                  {user?.name.charAt(0) || 'U'}
-                </div>
-              </div>
-              <div className="ml-3">
-                <div className="text-base font-medium text-neutral-800">{user?.name || 'User'}</div>
-                <div className="text-sm font-medium text-neutral-500">{user?.email || 'user@example.com'}</div>
-              </div>
-            </div>
-            <div className="mt-3 space-y-1">
-              <a
-                href="#"
-                className="block px-4 py-2 text-base font-medium text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100"
-              >
-                Your Profile
-              </a>
-              <a
-                href="#"
-                className="block px-4 py-2 text-base font-medium text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100"
-              >
-                Settings
-              </a>
-              <a
-                href="#"
-                className="block px-4 py-2 text-base font-medium text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100"
-              >
-                Sign out
-              </a>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="block w-full text-left px-4 py-2 text-base font-medium text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100"
+          >
+            Sign out
+          </button>
         </div>
       )}
     </header>

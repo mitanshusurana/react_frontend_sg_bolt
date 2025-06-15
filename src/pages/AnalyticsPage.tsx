@@ -6,6 +6,7 @@ import { formatCurrency, formatDate } from '../utils/formatters';
 
 const AnalyticsPage: React.FC = () => {
   const { gemstones } = useGemstones();
+  const gemstoneList = gemstones?.content ?? [];
   
   // Calculate analytics data
   const analyticsData = useMemo(() => {
@@ -15,7 +16,7 @@ const AnalyticsPage: React.FC = () => {
     const categoryValue: Record<string, number> = {};
     let totalValue = 0;
     
-    gemstones.forEach(gem => {
+    gemstoneList.forEach((gem) => {
       // Category count
       categoryCount[gem.category] = (categoryCount[gem.category] || 0) + 1;
       
@@ -23,7 +24,7 @@ const AnalyticsPage: React.FC = () => {
       typeCount[gem.type] = (typeCount[gem.type] || 0) + 1;
       
       // Values
-      if (gem.estimatedValue) {
+      if (typeof gem.estimatedValue === 'number') {
         totalValue += gem.estimatedValue;
         categoryValue[gem.category] = (categoryValue[gem.category] || 0) + gem.estimatedValue;
       }
@@ -42,9 +43,9 @@ const AnalyticsPage: React.FC = () => {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
-    const recentAdditions = gemstones
-      .filter(gem => new Date(gem.createdAt) > thirtyDaysAgo)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const recentAdditions = gemstoneList
+      .filter((gem: { createdAt: string | number | Date; }) => new Date(gem.createdAt) > thirtyDaysAgo)
+      .sort((a: { createdAt: string | number | Date; }, b: { createdAt: string | number | Date; }) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     
     return {
       categoryData,
@@ -52,9 +53,9 @@ const AnalyticsPage: React.FC = () => {
       valueData,
       recentAdditions,
       totalValue,
-      totalItems: gemstones.length
+      totalItems: gemstoneList.length
     };
-  }, [gemstones]);
+  }, [gemstoneList]);
   
   // Colors for charts
   const pieColors = ['#1A4B8C', '#2E8B57', '#E0115F', '#F59E0B', '#8B5CF6', '#EC4899'];
@@ -143,7 +144,7 @@ const AnalyticsPage: React.FC = () => {
                   dataKey="value"
                   label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                 >
-                  {analyticsData.categoryData.map((entry, index) => (
+                  {analyticsData.categoryData.map((_entry, index) => (
                     <Cell 
                       key={`cell-${index}`} 
                       fill={pieColors[index % pieColors.length]} 
@@ -203,12 +204,12 @@ const AnalyticsPage: React.FC = () => {
           {analyticsData.recentAdditions.length > 0 ? (
             <div className="overflow-hidden">
               <ul className="divide-y divide-neutral-200 max-h-80 overflow-y-auto pr-2">
-                {analyticsData.recentAdditions.map(gem => (
+                {analyticsData.recentAdditions.map((gem: { id: React.Key | null | undefined; images: any[]; name: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined; type: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; weight: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; createdAt: string; }) => (
                   <li key={gem.id} className="py-3 flex items-center">
                     <div className="w-10 h-10 rounded-md overflow-hidden mr-4">
                       <img 
                         src={gem.images[0] || 'https://images.pexels.com/photos/68740/diamond-gem-cubic-zirconia-jewel-68740.jpeg'} 
-                        alt={gem.name}
+                        alt={typeof gem.name === 'string' ? gem.name : gem.name?.toString() || ''}
                         className="w-full h-full object-cover"
                       />
                     </div>

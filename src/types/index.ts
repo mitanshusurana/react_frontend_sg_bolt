@@ -71,30 +71,14 @@ export interface FilterParams {
   sortOrder?: 'asc' | 'desc';
 }
 
-export interface GemstoneFormValues {
-  name: string;
-  category: string;
-  type: string;
-  weight: number;
-  dimensions: {
-    length: number;
-    width: number;
-    height: number;
-  };
-  color: string;
-  clarity: string;
-  cut: string;
-  origin: string;
-  treatment: string;
-  certification: string;
-  acquisitionDate: string;
-  acquisitionPrice?: number;
-  estimatedValue?: number;
-  seller?: string;
-  notes: string;
-  tags: string[];
-  images: (File | string)[];
-  video?: File | string;
+export interface PaginatedGemstones {
+  content: Gemstone[];
+  totalPages: number;
+  totalElements: number;
+  size: number;
+  number: number;
+  // Optionally add 'total' if your API returns it
+  total?: number;
 }
 
 export interface AnalyticsData {

@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { mockUsers } from '../utils/mockData';
 import { User } from '../types';
 
 interface AuthState {
@@ -9,20 +8,25 @@ interface AuthState {
   logout: () => void;
 }
 
-// For demo purposes, using a simple store with mock data
 export const useAuth = create<AuthState>((set) => ({
-  // Default to first user as logged in for demo
-  user: mockUsers[0],
-  isAuthenticated: true,
-  
+  user: null,
+  isAuthenticated: false,
+
   login: async (email: string, password: string) => {
-    // Simulate API call
     return new Promise((resolve) => {
       setTimeout(() => {
-        const user = mockUsers.find((u) => u.email === email);
-        
-        if (user) {
-          set({ user, isAuthenticated: true });
+        if (
+          email === 'mitanshusurana@gmail.com' &&
+          password === 'test01'
+        ) {
+          set({
+            user: {
+              email,
+              name: 'Mitanshu Surana',
+              role: 'admin', // or whatever roles you use
+            } as User,
+            isAuthenticated: true,
+          });
           resolve(true);
         } else {
           resolve(false);
@@ -30,7 +34,7 @@ export const useAuth = create<AuthState>((set) => ({
       }, 500);
     });
   },
-  
+
   logout: () => {
     set({ user: null, isAuthenticated: false });
   },
